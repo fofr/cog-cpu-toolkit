@@ -14,7 +14,8 @@ import time
 
 
 def run(output_fn, **kwargs):
-    if glob.glob(f"{output_fn}*"):
+    if glob.glob(f"{output_fn.rsplit('.', 1)[0]}*"):
+        print("Already ran", output_fn)
         return
 
     prediction_start = time.time()
@@ -23,8 +24,6 @@ def run(output_fn, **kwargs):
     response = requests.post(url, json={"input": kwargs})
     print(f"Prediction took: {time.time() - prediction_start:.2f}s")
     data = response.json()
-    print(data)
-
     try:
         for i, datauri in enumerate(data["output"]):
             base64_encoded_data = datauri.split(",")[1]
@@ -33,18 +32,24 @@ def run(output_fn, **kwargs):
                 f"{output_fn.rsplit('.', 1)[0]}_{i}.{output_fn.rsplit('.', 1)[1]}", "wb"
             ) as f:
                 f.write(decoded_data)
+            print("Wrote", output_fn)
     except Exception as e:
         print("Error!", str(e))
         print("input:", kwargs)
         print(data["logs"])
         sys.exit(1)
 
-
 def main():
     run(
         "sample_extract_video_audio_as_mp3.mp3",
         task="extract_video_audio_as_mp3",
         input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
+    )
+
+    run(
+        "sample_convert_to_mp4.mp4",
+        task="convert_to_mp4",
+        input_file="https://replicate.delivery/pbxt/RU9CI33SMCKMFBFQplELLexGPsOGNIU42VpauosBZZLkhW2IA/tmp.gif",
     )
 
 

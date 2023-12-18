@@ -2,6 +2,7 @@ from cog import BasePredictor, Input, Path
 from typing import List
 import subprocess
 import os
+import shutil
 
 VIDEO_FILE_EXTENSIONS = [
     ".3g2",
@@ -58,13 +59,17 @@ class Predictor(BasePredictor):
         ),
     ) -> List[Path]:
         """Run prediction"""
+        if os.path.exists('/tmp/outputs'):
+            shutil.rmtree('/tmp/outputs')
+        os.makedirs('/tmp/outputs')
+
         self.validate_inputs(task, input_file)
         self.fps = fps
 
         if task == "convert_to_mp4":
-            return self.convert_to_mp4(input_file, fps)
+            return self.convert_to_mp4(input_file)
         elif task == "extract_video_audio_as_mp3":
-            return self.extract_audio(input_file)
+            return self.extract_video_audio_as_mp3(input_file)
 
         return "ok"
 
@@ -85,7 +90,7 @@ class Predictor(BasePredictor):
         if self.fps != 0:
             command.extend(["-r", str(self.fps)])
 
-    def convert_to_mp4(self, video_path: Path, fps: int) -> List[Path]:
+    def convert_to_mp4(self, video_path: Path) -> List[Path]:
         """Convert video to mp4 using ffmpeg"""
         ffmpeg_command = [
             "-c:v",
@@ -96,10 +101,9 @@ class Predictor(BasePredictor):
             "0",  # Specify audio quality (0 is the highest)
         ]
 
-        self.add_fps(fps, ffmpeg_command)
-        return self.run_ffmpeg(video_path, "/tmp/video.mp4", ffmpeg_command)
+        return self.run_ffmpeg(video_path, "/tmp/outputs/video.mp4", ffmpeg_command)
 
-    def extract_audio(self, video_path: Path) -> List[Path]:
+    def extract_video_audio_as_mp3(self, video_path: Path) -> List[Path]:
         """Extract audio from video using ffmpeg"""
         ffmpeg_command = [
             "-q:a",
@@ -108,4 +112,4 @@ class Predictor(BasePredictor):
             "a",  # Map audio tracks (ignore video)
         ]
 
-        return self.run_ffmpeg(video_path, "/tmp/audio.mp3", ffmpeg_command)
+        return self.run_ffmpeg(video_path, "/tmp/outputs/audio.mp3", ffmpeg_command)
