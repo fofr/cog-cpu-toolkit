@@ -33,46 +33,79 @@ VIDEO_FILE_EXTENSIONS = [
     ".yuv",
 ]
 
+VIDEO_TASKS = ["convert_to_mp4", "extract_video_audio_as_mp3"]
+
 
 class Predictor(BasePredictor):
-    def predict(
-        self,
-        task: str = Input(
-            description="Task to perform", choices=["extract_video_audio_as_mp3"]
-        ),
-        input_file: Path = Input(description="File – zip, image or video to process"),
-        fps: int = Input(
-            description="frames per second, if relevant",
-            default=1,
-            ge=1,
-        ),
-    ) -> List[Path]:
-        """Run prediction"""
-        os.makedirs("/tmp/frames", exist_ok=True)
-        if task == "extract_video_audio_as_mp3":
+    def validate_inputs(self, task: str, input_file: Path):
+        if task in VIDEO_TASKS:
             if input_file.suffix.lower() not in VIDEO_FILE_EXTENSIONS:
                 raise ValueError(
                     "Input file must be a video file with one of the following extensions: "
                     + ", ".join(VIDEO_FILE_EXTENSIONS)
                 )
+
+    def predict(
+        self,
+        task: str = Input(
+            description="Task to perform",
+            choices=["convert_to_mp4", "extract_video_audio_as_mp3"],
+        ),
+        input_file: Path = Input(description="File – zip, image or video to process"),
+        fps: int = Input(
+            description="frames per second, if relevant (use 0 to keep original fps)",
+            default=0,
+        ),
+    ) -> List[Path]:
+        """Run prediction"""
+        self.validate_inputs(task, input_file)
+        self.fps = fps
+
+        if task == "convert_to_mp4":
+            return self.convert_to_mp4(input_file, fps)
+        elif task == "extract_video_audio_as_mp3":
             return self.extract_audio(input_file)
 
         return "ok"
 
+    def run_ffmpeg(self, input_path: Path, output_path: str, command: List[str]):
+        """Run ffmpeg command"""
+        prepend = ["ffmpeg", "-i", str(input_path)]
+        append = output_path
+        command = prepend + command
+        self.add_fps(command)
+        command.append(append)
+
+        print("Running ffmpeg command: " + " ".join(command))
+        subprocess.run(command)
+        return [Path(output_path)]
+
+    def add_fps(self, command: List[str]):
+        """Add fps to ffmpeg command"""
+        if self.fps != 0:
+            command.extend(["-r", str(self.fps)])
+
+    def convert_to_mp4(self, video_path: Path, fps: int) -> List[Path]:
+        """Convert video to mp4 using ffmpeg"""
+        ffmpeg_command = [
+            "-c:v",
+            "libx264",  # Video codec: H.264
+            "-c:a",
+            "aac",  # Audio codec: AAC
+            "-q:a",
+            "0",  # Specify audio quality (0 is the highest)
+        ]
+
+        self.add_fps(fps, ffmpeg_command)
+        return self.run_ffmpeg(video_path, "/tmp/video.mp4", ffmpeg_command)
+
     def extract_audio(self, video_path: Path) -> List[Path]:
         """Extract audio from video using ffmpeg"""
-        output_path = "/tmp/audio.mp3"
-
         ffmpeg_command = [
-            "ffmpeg",
-            "-i",
-            str(video_path),
             "-q:a",
             "0",  # Specify audio quality (0 is the highest)
             "-map",
             "a",  # Map audio tracks (ignore video)
-            output_path,
         ]
 
-        subprocess.run(ffmpeg_command)
-        return [Path(output_path)]
+        return self.run_ffmpeg(video_path, "/tmp/audio.mp3", ffmpeg_command)
