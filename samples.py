@@ -48,21 +48,47 @@ def main():
 
     run(
         "sample_convert_to_mp4.mp4",
-        task="convert_to_mp4",
+        task="convert_input_to_mp4",
         input_file="https://replicate.delivery/pbxt/RU9CI33SMCKMFBFQplELLexGPsOGNIU42VpauosBZZLkhW2IA/tmp.gif",
     )
 
     run(
         "sample_convert_to_mp4_with_fps.mp4",
-        task="convert_to_mp4",
+        task="convert_input_to_mp4",
         fps=1,
         input_file="https://replicate.delivery/pbxt/RU9CI33SMCKMFBFQplELLexGPsOGNIU42VpauosBZZLkhW2IA/tmp.gif",
     )
 
     run(
         "sample_convert_to_gif.gif",
-        task="convert_to_gif",
+        task="convert_input_to_gif",
         input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
+    )
+
+    run(
+        "sample_frames_to_mp4.mp4",
+        task="zipped_frames_to_mp4",
+        input_file="https://replicate.delivery/pbxt/IyPciuTwd9miRkQm3AVd4ZZrNta1i1M8rKs7vJtpy83uAIIi/frames.zip",
+    )
+
+    run(
+        "sample_frames_to_mp4_with_fps.mp4",
+        task="zipped_frames_to_mp4",
+        fps=1,
+        input_file="https://replicate.delivery/pbxt/IyPciuTwd9miRkQm3AVd4ZZrNta1i1M8rKs7vJtpy83uAIIi/frames.zip",
+    )
+
+    run(
+        "sample_frames_to_gif.gif",
+        task="zipped_frames_to_gif",
+        input_file="https://replicate.delivery/pbxt/IyPciuTwd9miRkQm3AVd4ZZrNta1i1M8rKs7vJtpy83uAIIi/frames.zip",
+    )
+
+    run(
+        "sample_frames_to_gif_with_fps.gif",
+        task="zipped_frames_to_gif",
+        fps=1,
+        input_file="https://replicate.delivery/pbxt/IyPciuTwd9miRkQm3AVd4ZZrNta1i1M8rKs7vJtpy83uAIIi/frames.zip",
     )
 
 
