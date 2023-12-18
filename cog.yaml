@@ -1,0 +1,6 @@
+build:
+  gpu: false
+  system_packages:
+    - "ffmpeg"
+  python_version: "3.11"
+predict: "predict.py:Predictor"
