@@ -91,6 +91,13 @@ def main():
         input_file="https://replicate.delivery/pbxt/IyPciuTwd9miRkQm3AVd4ZZrNta1i1M8rKs7vJtpy83uAIIi/frames.zip",
     )
 
+    run(
+        "sample_extract_frames_from_input.zip",
+        task="extract_frames_from_input",
+        fps=12,
+        input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
+    )
+
 
 if __name__ == "__main__":
     main()

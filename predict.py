@@ -39,6 +39,7 @@ VIDEO_TASKS = [
     "convert_input_to_mp4",
     "convert_input_to_gif",
     "extract_video_audio_as_mp3",
+    "extract_frames_from_input",
 ]
 ZIP_TASKS = ["zipped_frames_to_mp4", "zipped_frames_to_gif"]
 
@@ -67,6 +68,7 @@ class Predictor(BasePredictor):
                 "extract_video_audio_as_mp3",
                 "zipped_frames_to_mp4",
                 "zipped_frames_to_gif",
+                "extract_frames_from_input",
             ],
         ),
         input_file: Path = Input(description="File – zip, image or video to process"),
@@ -93,6 +95,8 @@ class Predictor(BasePredictor):
             return self.zipped_frames_to(input_file, "mp4")
         elif task == "zipped_frames_to_gif":
             return self.zipped_frames_to(input_file, "gif")
+        elif task == "extract_frames_from_input":
+            return self.extract_frames_from_input(input_file)
 
         return []
 
@@ -125,7 +129,11 @@ class Predictor(BasePredictor):
         try:
             subprocess.run(command, check=True)
         except subprocess.CalledProcessError as e:
-            raise RuntimeError("Command '{}' returned with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+            raise RuntimeError(
+                "Command '{}' returned with error (code {}): {}".format(
+                    e.cmd, e.returncode, e.output
+                )
+            )
         return [Path(output_path)]
 
     def convert_video_to(self, video_path: Path, type: str = "mp4") -> List[Path]:
@@ -171,6 +179,22 @@ class Predictor(BasePredictor):
         ]
 
         return self.run_ffmpeg(video_path, "/tmp/outputs/audio.mp3", command)
+
+    def extract_frames_from_input(self, video_path: Path) -> List[Path]:
+        """Extract frames from video using ffmpeg"""
+        command = ["-vf", f"fps={self.fps}"] if self.fps != 0 else []
+        self.run_ffmpeg(video_path, "/tmp/outputs/out%03d.png", command)
+
+        output_files = []
+        for filename in os.listdir("/tmp/outputs"):
+            if filename.endswith(".png") and filename.startswith("out"):
+                output_files.append(filename)
+
+        with zipfile.ZipFile("/tmp/outputs/frames.zip", "w") as zip_ref:
+            for filename in output_files:
+                zip_ref.write(f"/tmp/outputs/{filename}", filename)
+
+        return [Path("/tmp/outputs/frames.zip")]
 
     def zipped_frames_to(self, input_file: Path, type: str = "mp4") -> List[Path]:
         """Convert frames to video using ffmpeg"""
