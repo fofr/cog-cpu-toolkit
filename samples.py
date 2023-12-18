@@ -52,6 +52,19 @@ def main():
         input_file="https://replicate.delivery/pbxt/RU9CI33SMCKMFBFQplELLexGPsOGNIU42VpauosBZZLkhW2IA/tmp.gif",
     )
 
+    run(
+        "sample_convert_to_mp4_with_fps.mp4",
+        task="convert_to_mp4",
+        fps=1,
+        input_file="https://replicate.delivery/pbxt/RU9CI33SMCKMFBFQplELLexGPsOGNIU42VpauosBZZLkhW2IA/tmp.gif",
+    )
+
+    run(
+        "sample_convert_to_gif.gif",
+        task="convert_to_gif",
+        input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
+    )
+
 
 if __name__ == "__main__":
     main()

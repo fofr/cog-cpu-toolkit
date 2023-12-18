@@ -34,7 +34,7 @@ VIDEO_FILE_EXTENSIONS = [
     ".yuv",
 ]
 
-VIDEO_TASKS = ["convert_to_mp4", "extract_video_audio_as_mp3"]
+VIDEO_TASKS = ["convert_to_mp4", "convert_to_gif", "extract_video_audio_as_mp3"]
 
 
 class Predictor(BasePredictor):
@@ -50,7 +50,7 @@ class Predictor(BasePredictor):
         self,
         task: str = Input(
             description="Task to perform",
-            choices=["convert_to_mp4", "extract_video_audio_as_mp3"],
+            choices=["convert_to_mp4", "convert_to_gif", "extract_video_audio_as_mp3"],
         ),
         input_file: Path = Input(description="File – zip, image or video to process"),
         fps: int = Input(
@@ -59,15 +59,17 @@ class Predictor(BasePredictor):
         ),
     ) -> List[Path]:
         """Run prediction"""
-        if os.path.exists('/tmp/outputs'):
-            shutil.rmtree('/tmp/outputs')
-        os.makedirs('/tmp/outputs')
+        if os.path.exists("/tmp/outputs"):
+            shutil.rmtree("/tmp/outputs")
+        os.makedirs("/tmp/outputs")
 
         self.validate_inputs(task, input_file)
         self.fps = fps
 
         if task == "convert_to_mp4":
-            return self.convert_to_mp4(input_file)
+            return self.convert_video_to(input_file, "mp4")
+        elif task == "convert_to_gif":
+            return self.convert_video_to(input_file, "gif")
         elif task == "extract_video_audio_as_mp3":
             return self.extract_video_audio_as_mp3(input_file)
 
@@ -90,18 +92,35 @@ class Predictor(BasePredictor):
         if self.fps != 0:
             command.extend(["-r", str(self.fps)])
 
-    def convert_to_mp4(self, video_path: Path) -> List[Path]:
-        """Convert video to mp4 using ffmpeg"""
+    def convert_video_to(self, video_path: Path, type: str = "mp4") -> List[Path]:
+        """Convert video to format using ffmpeg"""
         ffmpeg_command = [
-            "-c:v",
-            "libx264",  # Video codec: H.264
-            "-c:a",
-            "aac",  # Audio codec: AAC
-            "-q:a",
-            "0",  # Specify audio quality (0 is the highest)
+            "-pix_fmt",
+            "yuv420p",  # Pixel format: YUV with 4:2:0 chroma subsampling
         ]
 
-        return self.run_ffmpeg(video_path, "/tmp/outputs/video.mp4", ffmpeg_command)
+        if type == "gif":
+            ffmpeg_command.extend(
+                [
+                    "-vf",
+                    f"fps={self.fps or 10},scale=512:-1:flags=lanczos",  # Set frame rate and scale (adjust as needed)
+                    "-c:v",
+                    "gif",  # Video codec: GIF
+                ]
+            )
+        else:
+            ffmpeg_command.extend(
+                [
+                    "-c:v",
+                    "libx264",  # Video codec: H.264
+                    "-c:a",
+                    "aac",  # Audio codec: AAC
+                    "-q:a",
+                    "0",  # Specify audio quality (0 is the highest)
+                ]
+            )
+
+        return self.run_ffmpeg(video_path, f"/tmp/outputs/video.{type}", ffmpeg_command)
 
     def extract_video_audio_as_mp3(self, video_path: Path) -> List[Path]:
         """Extract audio from video using ffmpeg"""
