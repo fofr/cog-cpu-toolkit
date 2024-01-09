@@ -39,11 +39,24 @@ def run(output_fn, **kwargs):
         print(data["logs"])
         sys.exit(1)
 
+
 def main():
     run(
         "sample_reverse_video.mp4",
         task="reverse_video",
         input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
+    )
+
+    run(
+        "sample_bounce_video.mp4",
+        task="bounce_video",
+        input_file="https://replicate.delivery/pbxt/CmppJesjwO3jPSmdd1fflCjGeODlOpVy5I0PyXlgLeMmanVRC/video.mp4",
+    )
+
+    run(
+        "sample_bounce_gif.gif",
+        task="bounce_video",
+        input_file="https://replicate.delivery/pbxt/KCBdyVkWcgjiCM3nzdg9JpqX8xzTGUimj4mWdpWgCQOm6umr/replicate-prediction-3rcqh5dbvob5u7gsd5vammyfwy.gif",
     )
 
     run(
@@ -103,6 +116,7 @@ def main():
         fps=12,
         input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
     )
+
 
 if __name__ == "__main__":
     main()

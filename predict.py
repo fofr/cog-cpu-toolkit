@@ -41,6 +41,7 @@ VIDEO_TASKS = [
     "extract_video_audio_as_mp3",
     "extract_frames_from_input",
     "reverse_video",
+    "bounce_video",
 ]
 ZIP_TASKS = ["zipped_frames_to_mp4", "zipped_frames_to_gif"]
 
@@ -71,6 +72,7 @@ class Predictor(BasePredictor):
                 "zipped_frames_to_gif",
                 "extract_frames_from_input",
                 "reverse_video",
+                "bounce_video",
             ],
         ),
         input_file: Path = Input(description="File – zip, image or video to process"),
@@ -101,6 +103,8 @@ class Predictor(BasePredictor):
             return self.extract_frames_from_input(input_file)
         elif task == "reverse_video":
             return self.reverse_video(input_file)
+        elif task == "bounce_video":
+            return self.bounce_video(input_file)
 
         return []
 
@@ -246,6 +250,7 @@ class Predictor(BasePredictor):
 
     def reverse_video(self, video_path: Path) -> List[Path]:
         """Reverse video using ffmpeg"""
+        output_file = "/tmp/outputs/reversed" + video_path.suffix
         command = [
             "-vf",
             "reverse",
@@ -253,4 +258,42 @@ class Predictor(BasePredictor):
             "areverse",
         ]
 
-        return self.run_ffmpeg(video_path, "/tmp/outputs/reversed.mp4", command)
+        return self.run_ffmpeg(video_path, output_file, command)
+
+    def bounce_video(self, video_path: Path) -> List[Path]:
+        """Bounce video or gif using ffmpeg"""
+        reversed_video_path = "/tmp/outputs/reversed" + video_path.suffix
+        self.reverse_video(video_path)
+
+        with open("/tmp/outputs/concat_list.txt", "w") as f:
+            f.write(f"file '{video_path}'\nfile '{reversed_video_path}'\n")
+
+        command = [
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            "/tmp/outputs/concat_list.txt",  # Use the temporary file as input
+        ]
+
+        if video_path.suffix == ".gif":
+            command.extend(
+                [
+                    "-vf",
+                    "scale=512:-1:flags=lanczos",
+                    "-c:v",
+                    "gif",  # Video codec: GIF
+                ]
+            )
+        else:
+            command.extend(
+                [
+                    "-c",
+                    "copy",
+                ]
+            )
+
+        return self.run_ffmpeg(
+            None, f"/tmp/outputs/bounced{video_path.suffix}", command
+        )
