@@ -41,6 +41,12 @@ def run(output_fn, **kwargs):
 
 def main():
     run(
+        "sample_reverse_video.mp4",
+        task="reverse_video",
+        input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
+    )
+
+    run(
         "sample_extract_video_audio_as_mp3.mp3",
         task="extract_video_audio_as_mp3",
         input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
@@ -97,7 +103,6 @@ def main():
         fps=12,
         input_file="https://replicate.delivery/pbxt/0hNQY7Gy2eSiG6ghDRkabuJeV4oDNETFB6cWi2NdfB2TdMvhA/out.mp4",
     )
-
 
 if __name__ == "__main__":
     main()

@@ -40,6 +40,7 @@ VIDEO_TASKS = [
     "convert_input_to_gif",
     "extract_video_audio_as_mp3",
     "extract_frames_from_input",
+    "reverse_video",
 ]
 ZIP_TASKS = ["zipped_frames_to_mp4", "zipped_frames_to_gif"]
 
@@ -69,6 +70,7 @@ class Predictor(BasePredictor):
                 "zipped_frames_to_mp4",
                 "zipped_frames_to_gif",
                 "extract_frames_from_input",
+                "reverse_video",
             ],
         ),
         input_file: Path = Input(description="File – zip, image or video to process"),
@@ -97,6 +99,8 @@ class Predictor(BasePredictor):
             return self.zipped_frames_to(input_file, "gif")
         elif task == "extract_frames_from_input":
             return self.extract_frames_from_input(input_file)
+        elif task == "reverse_video":
+            return self.reverse_video(input_file)
 
         return []
 
@@ -239,3 +243,14 @@ class Predictor(BasePredictor):
             )
 
         return self.run_ffmpeg(False, f"/tmp/outputs/video.{type}", command)
+
+    def reverse_video(self, video_path: Path) -> List[Path]:
+        """Reverse video using ffmpeg"""
+        command = [
+            "-vf",
+            "reverse",
+            "-af",
+            "areverse",
+        ]
+
+        return self.run_ffmpeg(video_path, "/tmp/outputs/reversed.mp4", command)
