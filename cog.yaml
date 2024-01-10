@@ -3,4 +3,6 @@ build:
   system_packages:
     - "ffmpeg"
   python_version: "3.11"
+  python_packages:
+    - "pillow==10.2.0"
 predict: "predict.py:Predictor"

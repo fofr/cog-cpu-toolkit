@@ -1,5 +1,6 @@
 from cog import BasePredictor, Input, Path
 from typing import List
+from PIL import Image
 import subprocess
 import os
 import shutil
@@ -35,6 +36,24 @@ VIDEO_FILE_EXTENSIONS = [
     ".yuv",
 ]
 
+IMAGE_FILE_EXTENSIONS = [
+    ".bmp",
+    ".dib",
+    ".jpeg",
+    ".jpg",
+    ".jpe",
+    ".jp2",
+    ".png",
+    ".pbm",
+    ".pgm",
+    ".ppm",
+    ".sr",
+    ".ras",
+    ".tiff",
+    ".tif",
+    ".webp",
+]
+
 VIDEO_TASKS = [
     "convert_input_to_mp4",
     "convert_input_to_gif",
@@ -43,12 +62,24 @@ VIDEO_TASKS = [
     "reverse_video",
     "bounce_video",
 ]
+
+IMAGE_TASKS = [
+    "ken_burns_video_from_image",
+]
+
 ZIP_TASKS = ["zipped_frames_to_mp4", "zipped_frames_to_gif"]
 
 
 class Predictor(BasePredictor):
     def validate_inputs(self, task: str, input_file: Path):
         """Validate inputs"""
+        if task in IMAGE_TASKS:
+            if input_file.suffix.lower() not in IMAGE_FILE_EXTENSIONS:
+                raise ValueError(
+                    "Input file must be an image file with one of the following extensions: "
+                    + ", ".join(IMAGE_FILE_EXTENSIONS)
+                )
+
         if task in ZIP_TASKS:
             if input_file.suffix.lower() != ".zip":
                 raise ValueError("Input file must be a zip file")
@@ -73,12 +104,17 @@ class Predictor(BasePredictor):
                 "extract_frames_from_input",
                 "reverse_video",
                 "bounce_video",
+                "ken_burns_video_from_image",
             ],
         ),
         input_file: Path = Input(description="File – zip, image or video to process"),
         fps: int = Input(
             description="frames per second, if relevant. Use 0 to keep original fps (or use default). Converting to GIF defaults to 12fps",
             default=0,
+        ),
+        ken_burns_duration: int = Input(
+            description="duration of the video in seconds. Default is 10s",
+            default=10,
         ),
     ) -> List[Path]:
         """Run prediction"""
@@ -105,8 +141,47 @@ class Predictor(BasePredictor):
             return self.reverse_video(input_file)
         elif task == "bounce_video":
             return self.bounce_video(input_file)
+        elif task == "ken_burns_video_from_image":
+            return self.ken_burns_video_from_image(input_file, ken_burns_duration)
 
         return []
+
+    def ken_burns_video_from_image(self, image_path: Path, duration: int) -> List[Path]:
+        """Create a video with Ken Burns effect from an image using ffmpeg"""
+        img = Image.open(image_path)
+        width, height = img.size
+
+        resolution = f"{width}x{height}"
+        scale = "8000:-1"
+        zoom = "zoom+0.001"
+        x_position = "iw/2-(iw/zoom/2)"
+        y_position = "ih/2-(ih/zoom/2)"
+        d_value = "250"
+        fps = "25"
+
+        command = [
+            "-loop",
+            "1",
+            "-y",
+            "-filter_complex",
+            f"[0]scale=1200:-2,setsar=1:1[out];[out]crop={width}:{height}[out];[out]scale={scale},zoompan=z='{zoom}':x={x_position}:y={y_position}:d={d_value}:s={resolution}:fps={fps}[out]",
+            "-acodec",
+            "aac",
+            "-vcodec",
+            "libx264",
+            "-map",
+            "[out]",
+            "-map",
+            "0:a?",
+            "-pix_fmt",
+            "yuv420p",
+            "-r",
+            "25",
+            "-t",
+            str(duration),
+        ]
+
+        return self.run_ffmpeg(image_path, "/tmp/outputs/ken_burns.mp4", command)
 
     def unzip(self, input_path: Path) -> List[Path]:
         """Unzip file"""
